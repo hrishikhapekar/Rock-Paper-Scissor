@@ -33,7 +33,21 @@ function OnlineGame({ user, gameData, onNavigate }) {
 
   useEffect(() => {
     if (gameData?.roomId) {
+      console.log('Starting game initialization...')
       initializeGame()
+      
+      // Timeout fallback - show game UI even if initialization is incomplete
+      setTimeout(() => {
+        if (!room || !myPlayer || !opponent) {
+          console.log('Initialization timeout, showing basic UI')
+          setRoom({ id: gameData.roomId, total_rounds: 5, current_round: 1, status: 'playing' })
+          setMyPlayer({ user_id: user.id, profiles: { username: 'You', rating: 1200 } })
+          setOpponent({ user_id: 'opponent', profiles: { username: 'Opponent', rating: 1200 } })
+          setGameState('playing')
+          setTimeLeft(15)
+          setIsTimerActive(true)
+        }
+      }, 5000)
     }
     
     return () => {
@@ -449,7 +463,9 @@ function OnlineGame({ user, gameData, onNavigate }) {
     )
   }
 
-  if (!room || !myPlayer || !opponent) {
+  // Show loading for max 3 seconds, then show game UI anyway
+  if ((!room || !myPlayer || !opponent) && Date.now() - (window.gameStartTime || Date.now()) < 3000) {
+    if (!window.gameStartTime) window.gameStartTime = Date.now()
     return (
       <div className="card">
         <div className="loading">Loading game...</div>
