@@ -13,7 +13,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
   // Force immediate game state - bypass database loading
   const [room, setRoom] = useState({ id: gameData?.roomId, total_rounds: 5, current_round: 1, status: 'playing' })
   const [myPlayer] = useState({ user_id: user.id, profiles: { username: 'You', rating: 1200 } })
-  const [opponent] = useState({ user_id: 'opponent', profiles: { username: 'Opponent', rating: 1200 } })
+  const [opponent, setOpponent] = useState({ user_id: 'opponent', profiles: { username: 'Finding opponent...', rating: 1200 } })
   const [gameState, setGameState] = useState('playing')
   const [isTimerActive, setIsTimerActive] = useState(true)
   const [shuffledMoves, setShuffledMoves] = useState([...MOVES])
@@ -36,7 +36,32 @@ function OnlineGame({ user, gameData, onNavigate }) {
   // Remove complex initialization - just show game immediately
   useEffect(() => {
     shuffleMoves()
+    // Try to get real opponent data
+    loadOpponentData()
   }, [])
+
+  const loadOpponentData = async () => {
+    try {
+      const { data: players } = await supabase
+        .from('room_players')
+        .select(`
+          user_id,
+          profiles:user_id (username, rating)
+        `)
+        .eq('room_id', gameData?.roomId)
+        .neq('user_id', user.id)
+        .single()
+      
+      if (players?.profiles) {
+        setOpponent({
+          user_id: players.user_id,
+          profiles: players.profiles
+        })
+      }
+    } catch (error) {
+      console.log('Could not load opponent data:', error)
+    }
+  }
 
   useEffect(() => {
     if (room && room.current_round) {
@@ -401,18 +426,34 @@ function OnlineGame({ user, gameData, onNavigate }) {
     try {
       setRematchVoting(prev => ({ ...prev, myVote: vote }))
       
-      // In a real implementation, you'd store votes in the database
-      // For now, we'll simulate opponent voting
-      setTimeout(() => {
-        const oppVote = Math.random() > 0.5 // 50% chance opponent accepts
-        setRematchVoting(prev => ({ ...prev, oppVote }))
+      // Store vote in database for real-time sync
+      await supabase
+        .from('rooms')
+        .update({ 
+          [`player_${user.id}_vote`]: vote ? 'accept' : 'decline'
+        })
+        .eq('id', gameData.roomId)
+      
+      // Check if both votes are in
+      setTimeout(async () => {
+        const { data: roomData } = await supabase
+          .from('rooms')
+          .select('*')
+          .eq('id', gameData.roomId)
+          .single()
         
-        if (vote && oppVote) {
-          // Both accepted - start new game
-          setTimeout(() => resetForRematch(), 1000)
-        } else {
-          // Someone declined - end voting
-          setTimeout(() => setRematchVoting(null), 2000)
+        const myVoteKey = `player_${user.id}_vote`
+        const oppVoteKey = `player_${opponent.user_id}_vote`
+        
+        if (roomData[myVoteKey] && roomData[oppVoteKey]) {
+          if (roomData[myVoteKey] === 'accept' && roomData[oppVoteKey] === 'accept') {
+            // Both accepted - start new game
+            setTimeout(() => resetForRematch(), 1000)
+          } else {
+            // Someone declined - show message and exit
+            setError('Rematch declined. Returning to menu...')
+            setTimeout(() => onNavigate('menu'), 2000)
+          }
         }
       }, 1000)
     } catch (error) {

@@ -7,6 +7,8 @@ function RankedQueue({ user, onNavigate }) {
   const [queueTime, setQueueTime] = useState(0)
   const [userProfile, setUserProfile] = useState(null)
   const [error, setError] = useState('')
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newUsername, setNewUsername] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -184,7 +186,28 @@ function RankedQueue({ user, onNavigate }) {
     }, 60000)
   }
 
-  const leaveQueue = async () => {
+  const updateUsername = async () => {
+    try {
+      if (!newUsername.trim()) {
+        setError('Username cannot be empty')
+        return
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ username: newUsername.trim() })
+        .eq('id', user.id)
+      
+      if (error) throw error
+      
+      setUserProfile(prev => ({ ...prev, username: newUsername.trim() }))
+      setEditingUsername(false)
+      setNewUsername('')
+      setError('')
+    } catch (error) {
+      setError('Failed to update username: ' + error.message)
+    }
+  }
     try {
       await supabase
         .from('matchmaking_queue')
@@ -223,11 +246,53 @@ function RankedQueue({ user, onNavigate }) {
       <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Ranked Matchmaking</h2>
       
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <div style={{ fontSize: '18px', marginBottom: '10px' }}>
-          Player: <strong>{userProfile.username}</strong>
-        </div>
-        <div style={{ fontSize: '16px', color: '#4ecdc4' }}>
-          Rating: <strong>{userProfile.rating}</strong>
+        <div style={{ 
+          background: 'rgba(255, 255, 255, 0.1)', 
+          padding: '20px', 
+          borderRadius: '10px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ marginBottom: '15px' }}>Your Profile</h3>
+          <div style={{ fontSize: '20px', marginBottom: '10px' }}>
+            {editingUsername ? (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  placeholder={userProfile.username}
+                  style={{
+                    padding: '8px',
+                    borderRadius: '5px',
+                    border: 'none',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                    fontSize: '16px'
+                  }}
+                />
+                <button className="btn btn-primary" onClick={updateUsername} style={{ padding: '8px 12px' }}>
+                  ✓
+                </button>
+                <button className="btn" onClick={() => { setEditingUsername(false); setNewUsername('') }} style={{ padding: '8px 12px' }}>
+                  ✗
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', alignItems: 'center' }}>
+                <strong>{userProfile.username}</strong>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => { setEditingUsername(true); setNewUsername(userProfile.username) }}
+                  style={{ padding: '4px 8px', fontSize: '12px' }}
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize: '18px', color: '#4ecdc4' }}>
+            Rating: <strong>{userProfile.rating}</strong>
+          </div>
         </div>
       </div>
 

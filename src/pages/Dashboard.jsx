@@ -27,10 +27,10 @@ function Dashboard({ user, onNavigate }) {
       if (profileError) throw profileError
       setUserProfile(profile)
 
-      // Get leaderboard (top 10)
+      // Get leaderboard (top 10) with win/loss stats
       const { data: leaderboardData, error: leaderboardError } = await supabase
         .from('profiles')
-        .select('username, rating')
+        .select('username, rating, wins, losses')
         .order('rating', { ascending: false })
         .limit(10)
 
@@ -152,27 +152,38 @@ function Dashboard({ user, onNavigate }) {
       <div className="leaderboard">
         <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Global Leaderboard</h3>
         {leaderboard.length > 0 ? (
-          leaderboard.map((player, index) => (
-            <div 
-              key={player.username} 
-              className="leaderboard-item"
-              style={{
-                background: player.username === userProfile?.username 
-                  ? 'rgba(78, 205, 196, 0.2)' 
-                  : 'rgba(255, 255, 255, 0.1)',
-                border: player.username === userProfile?.username 
-                  ? '2px solid #4ecdc4' 
-                  : 'none'
-              }}
-            >
-              <div className="rank">#{index + 1}</div>
-              <div className="username">
-                {player.username}
-                {player.username === userProfile?.username && ' (You)'}
+          leaderboard.map((player, index) => {
+            const winRate = (player.wins && player.losses) 
+              ? Math.round((player.wins / (player.wins + player.losses)) * 100)
+              : 0
+            
+            return (
+              <div 
+                key={player.username} 
+                className="leaderboard-item"
+                style={{
+                  background: player.username === userProfile?.username 
+                    ? 'rgba(78, 205, 196, 0.2)' 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  border: player.username === userProfile?.username 
+                    ? '2px solid #4ecdc4' 
+                    : 'none'
+                }}
+              >
+                <div className="rank">#{index + 1}</div>
+                <div className="username">
+                  {player.username}
+                  {player.username === userProfile?.username && ' (You)'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <div className="rating">{player.rating}</div>
+                  <div style={{ fontSize: '12px', color: '#ffa502' }}>
+                    {winRate}% WR
+                  </div>
+                </div>
               </div>
-              <div className="rating">{player.rating}</div>
-            </div>
-          ))
+            )
+          }))
         ) : (
           <div style={{ textAlign: 'center', opacity: 0.7 }}>
             No players found
