@@ -61,6 +61,8 @@ function OnlineGame({ user, gameData, onNavigate }) {
 
   const initializeGame = async () => {
     try {
+      console.log('Initializing game with roomId:', gameData.roomId)
+      
       // Get room data
       const { data: roomData, error: roomError } = await supabase
         .from('rooms')
@@ -68,7 +70,12 @@ function OnlineGame({ user, gameData, onNavigate }) {
         .eq('id', gameData.roomId)
         .single()
 
-      if (roomError) throw roomError
+      if (roomError) {
+        console.error('Room error:', roomError)
+        throw roomError
+      }
+      
+      console.log('Room data:', roomData)
       setRoom(roomData)
 
       // Get players
@@ -80,11 +87,21 @@ function OnlineGame({ user, gameData, onNavigate }) {
         `)
         .eq('room_id', gameData.roomId)
 
-      if (playersError) throw playersError
+      if (playersError) {
+        console.error('Players error:', playersError)
+        throw playersError
+      }
+      
+      console.log('Players data:', playersData)
       setPlayers(playersData)
 
       const me = playersData.find(p => p.user_id === user.id)
       const opp = playersData.find(p => p.user_id !== user.id)
+      
+      if (!me || !opp) {
+        throw new Error('Could not find both players in room')
+      }
+      
       setMyPlayer(me)
       setOpponent(opp)
 
@@ -96,6 +113,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
         await startRound()
       }
     } catch (error) {
+      console.error('Game initialization error:', error)
       setError('Failed to initialize game: ' + error.message)
     }
   }
@@ -418,11 +436,29 @@ function OnlineGame({ user, gameData, onNavigate }) {
     }
   }
 
+  if (!gameData?.roomId) {
+    return (
+      <div className="card">
+        <div className="error">No room data found</div>
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button className="btn btn-secondary" onClick={() => onNavigate('menu')}>
+            ← Back to Menu
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   if (!room || !myPlayer || !opponent) {
     return (
       <div className="card">
         <div className="loading">Loading game...</div>
         {error && <div className="error">{error}</div>}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button className="btn btn-secondary" onClick={() => onNavigate('menu')}>
+            ← Exit Game
+          </button>
+        </div>
       </div>
     )
   }
