@@ -33,68 +33,37 @@ function RankedQueue({ user, onNavigate }) {
         .eq('id', user.id)
         .single()
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError
-      }
-
-      if (!profile) {
-        // Create profile with unique username
-        const username = await generateUniqueUsername(user.user_metadata?.full_name || 'Player')
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create it
+        const username = `Player#${Math.floor(Math.random() * 9999)}`
         
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: user.id,
             username: username,
-            avatar_url: user.user_metadata?.avatar_url,
             rating: 1200
           })
           .select()
           .single()
 
-        if (insertError) throw insertError
+        if (insertError) {
+          console.error('Profile creation failed:', insertError)
+          setError('Failed to create profile')
+          return
+        }
         setUserProfile(newProfile)
+      } else if (profileError) {
+        console.error('Profile fetch failed:', profileError)
+        setError('Failed to load profile')
+        return
       } else {
         setUserProfile(profile)
       }
     } catch (error) {
-      setError('Failed to initialize profile: ' + error.message)
+      console.error('Profile initialization failed:', error)
+      setError('Failed to initialize profile')
     }
-  }
-
-  const generateUniqueUsername = async (baseName) => {
-    // Clean base name
-    let cleanName = baseName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
-    if (!cleanName) cleanName = 'Player'
-
-    // Check if base name is available
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('username')
-      .ilike('username', cleanName)
-
-    if (!existing || existing.length === 0) {
-      return cleanName
-    }
-
-    // Generate unique username with suffix
-    let attempts = 0
-    while (attempts < 1000) {
-      const suffix = Math.floor(Math.random() * 9999) + 1
-      const testName = `${cleanName}#${suffix}`
-      
-      const { data: existingWithSuffix } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', testName)
-
-      if (!existingWithSuffix || existingWithSuffix.length === 0) {
-        return testName
-      }
-      attempts++
-    }
-
-    throw new Error('Could not generate unique username')
   }
 
   const joinQueue = async () => {
