@@ -89,12 +89,30 @@ function RankedQueue({ user, onNavigate }) {
 
       if (queueError) throw queueError
 
-      // Start looking for matches
+      // Start looking for matches AND listen for matches
       findMatch()
+      listenForMatches()
     } catch (error) {
       setError('Failed to join queue: ' + error.message)
       setIsQueuing(false)
     }
+  }
+
+  const listenForMatches = () => {
+    const subscription = supabase
+      .channel('matchmaking')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'room_players', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          console.log('Player added to room:', payload)
+          setIsQueuing(false)
+          onNavigate('online-game', { roomId: payload.new.room_id })
+        }
+      )
+      .subscribe()
+
+    // Store subscription to clean up later
+    window.matchmakingSubscription = subscription
   }
 
   const findMatch = async () => {
@@ -172,6 +190,11 @@ function RankedQueue({ user, onNavigate }) {
         .from('matchmaking_queue')
         .delete()
         .eq('user_id', user.id)
+      
+      // Clean up subscription
+      if (window.matchmakingSubscription) {
+        window.matchmakingSubscription.unsubscribe()
+      }
       
       setIsQueuing(false)
       setQueueTime(0)
