@@ -1,6 +1,14 @@
-# Rock Paper Scissor
+# Rock-Paper-Scissors Game
 
+[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
+[![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A classic web-based implementation of Rock, Paper, Scissors...
 A modern, feature-rich Rock Paper Scissor game built with React and real-time multiplayer capabilities. Challenge friends, climb the rankings, and enjoy seamless gameplay with authentication and persistent user data.
+
+[**View Live Demo**](https://rock-paper-scissor-topaz-beta.vercel.app/)
 
 ## Features
 
