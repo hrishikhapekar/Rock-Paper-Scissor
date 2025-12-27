@@ -292,15 +292,14 @@ We welcome contributions! If you have ideas or improvements:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is open-sourced.
 
 ## Support
 
 For issues, questions, or suggestions:
 
 - **GitHub Issues**: [Create an issue](https://github.com/hrishikhapekar/Rock-Paper-Scissor/issues)
-- **Email**: [Contact the maintainer]
-- **Documentation**: Check the wiki for detailed guides
+- **Email**: [Contact the maintaine](khapekar2005@gmail.com)
 
 ## Acknowledgments
 
