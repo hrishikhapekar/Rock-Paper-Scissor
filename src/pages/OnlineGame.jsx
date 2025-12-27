@@ -165,6 +165,8 @@ function OnlineGame({ user, gameData, onNavigate }) {
       setRoundResult(null)
       setShowResult(false)
       setBufferTime(0)
+      
+      console.log('Round started:', room?.current_round)
     } catch (error) {
       setError('Failed to start round: ' + error.message)
     }
@@ -261,22 +263,27 @@ function OnlineGame({ user, gameData, onNavigate }) {
       setShowResult(true)
       setGameState('showing-result')
 
-      // Calculate new scores
-      const myScore = players.reduce((acc, p) => {
-        if (p.user_id === user.id) return acc
-        return acc + (result === 'win' ? 1 : 0)
-      }, 0) + (result === 'win' ? 1 : 0)
-
-      const oppScore = players.reduce((acc, p) => {
-        if (p.user_id !== user.id) return acc
-        return acc + (result === 'lose' ? 1 : 0)
-      }, 0) + (result === 'lose' ? 1 : 0)
+      // Update scores based on round result
+      let newMyScore = myScore
+      let newOppScore = oppScore
+      
+      if (result === 'win') {
+        newMyScore = myScore + 1
+        setMyScore(newMyScore)
+      } else if (result === 'lose') {
+        newOppScore = oppScore + 1
+        setOppScore(newOppScore)
+      }
 
       const winThreshold = Math.ceil(room.total_rounds / 2)
+      console.log('Scores:', { newMyScore, newOppScore, winThreshold, currentRound: room.current_round })
 
       // Check if game is finished
-      if (myScore >= winThreshold || oppScore >= winThreshold || room.current_round >= room.total_rounds) {
-        setTimeout(() => finishGame(myScore >= winThreshold), 3000)
+      if (newMyScore >= winThreshold || newOppScore >= winThreshold) {
+        setTimeout(() => finishGame(newMyScore >= winThreshold), 3000)
+      } else if (room.current_round >= room.total_rounds) {
+        // All rounds played, determine winner by score
+        setTimeout(() => finishGame(newMyScore > newOppScore), 3000)
       } else {
         setTimeout(() => nextRound(), 3000)
       }
@@ -420,8 +427,8 @@ function OnlineGame({ user, gameData, onNavigate }) {
     )
   }
 
-  const myScore = 0 // Will be calculated from actual game rounds
-  const oppScore = 0 // Will be calculated from actual game rounds
+  const [myScore, setMyScore] = useState(0)
+  const [oppScore, setOppScore] = useState(0)
 
   return (
     <div className="card">
