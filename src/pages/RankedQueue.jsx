@@ -72,6 +72,12 @@ function RankedQueue({ user, onNavigate }) {
       setQueueTime(0)
       setError('')
 
+      // Remove any existing queue entry first
+      await supabase
+        .from('matchmaking_queue')
+        .delete()
+        .eq('user_id', user.id)
+
       // Add to matchmaking queue
       const { error: queueError } = await supabase
         .from('matchmaking_queue')
