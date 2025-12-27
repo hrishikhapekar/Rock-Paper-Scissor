@@ -11,7 +11,7 @@ const MOVE_EMOJIS = { rock: '🪨', paper: '📄', scissors: '✂️' }
 
 function OnlineGame({ user, gameData, onNavigate }) {
   // Force immediate game state - bypass database loading
-  const [room] = useState({ id: gameData?.roomId, total_rounds: 5, current_round: 1, status: 'playing' })
+  const [room, setRoom] = useState({ id: gameData?.roomId, total_rounds: 5, current_round: 1, status: 'playing' })
   const [myPlayer] = useState({ user_id: user.id, profiles: { username: 'You', rating: 1200 } })
   const [opponent] = useState({ user_id: 'opponent', profiles: { username: 'Opponent', rating: 1200 } })
   const [gameState, setGameState] = useState('playing')
@@ -327,9 +327,14 @@ function OnlineGame({ user, gameData, onNavigate }) {
         return
       }
       
+      // Update local room state
+      const newRoom = { ...room, current_round: room.current_round + 1 }
+      setRoom(newRoom)
+      
+      // Also update database
       await supabase
         .from('rooms')
-        .update({ current_round: room.current_round + 1 })
+        .update({ current_round: newRoom.current_round })
         .eq('id', gameData.roomId)
 
       await startRound()
