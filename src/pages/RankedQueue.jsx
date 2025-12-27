@@ -100,17 +100,12 @@ function RankedQueue({ user, onNavigate }) {
   const findMatch = async () => {
     const matchInterval = setInterval(async () => {
       try {
-        // Look for another player in queue with similar rating and same rounds
-        const ratingRange = Math.max(100, queueTime * 10) // Expand range over time
-        
+        // Look for another player in queue with same rounds
         const { data: opponents, error } = await supabase
           .from('matchmaking_queue')
           .select('*')
           .neq('user_id', user.id)
           .eq('rounds', selectedRounds)
-          .gte('rating', userProfile.rating - ratingRange)
-          .lte('rating', userProfile.rating + ratingRange)
-          .order('joined_at', { ascending: true })
           .limit(1)
 
         if (error) throw error
@@ -159,16 +154,16 @@ function RankedQueue({ user, onNavigate }) {
         setIsQueuing(false)
         setError('Matchmaking failed: ' + error.message)
       }
-    }, 2000) // Check every 2 seconds
+    }, 3000) // Check every 3 seconds
 
-    // Timeout after 5 minutes
+    // Timeout after 2 minutes
     setTimeout(() => {
       clearInterval(matchInterval)
       if (isQueuing) {
         leaveQueue()
-        setError('Matchmaking timed out. Please try again.')
+        setError('No opponents found. Try again later.')
       }
-    }, 300000)
+    }, 120000)
   }
 
   const leaveQueue = async () => {
