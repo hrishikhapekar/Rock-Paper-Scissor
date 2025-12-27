@@ -201,11 +201,11 @@ function OnlineGame({ user, gameData, onNavigate }) {
       }, 1000)
 
       // Buffer timeout
-      setTimeout(() => {
+      setTimeout(async () => {
         clearInterval(bufferInterval)
         setBufferTime(0)
         // Force check resolution after buffer ends
-        setTimeout(() => {
+        setTimeout(async () => {
           const { data: updatedPlayers } = await supabase
             .from('room_players')
             .select(`
@@ -248,6 +248,11 @@ function OnlineGame({ user, gameData, onNavigate }) {
 
   const resolveRound = async (myMove, oppMove) => {
     try {
+      if (!room) {
+        console.error('Room is null, cannot resolve round')
+        return
+      }
+      
       setOpponentMove(oppMove)
       const result = determineWinner(myMove, oppMove)
       setRoundResult(result)
@@ -274,6 +279,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
         setTimeout(() => nextRound(), 3000)
       }
     } catch (error) {
+      console.error('Failed to resolve round:', error)
       setError('Failed to resolve round: ' + error.message)
     }
   }
@@ -292,6 +298,11 @@ function OnlineGame({ user, gameData, onNavigate }) {
 
   const nextRound = async () => {
     try {
+      if (!room) {
+        console.error('Room is null, cannot start next round')
+        return
+      }
+      
       await supabase
         .from('rooms')
         .update({ current_round: room.current_round + 1 })
