@@ -390,8 +390,21 @@ function OnlineGame({ user, gameData, onNavigate }) {
     )
   }
 
-  const myScore = Math.floor(Math.random() * 3) // Placeholder - calculate from game history
-  const oppScore = Math.floor(Math.random() * 3) // Placeholder - calculate from game history
+  const myScore = players.reduce((score, p) => {
+    if (p.user_id === user.id) {
+      // Count wins from game history - placeholder for now
+      return 0
+    }
+    return score
+  }, 0)
+  
+  const oppScore = players.reduce((score, p) => {
+    if (p.user_id !== user.id) {
+      // Count wins from game history - placeholder for now  
+      return 0
+    }
+    return score
+  }, 0)
 
   return (
     <div className="card">

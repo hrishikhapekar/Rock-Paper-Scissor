@@ -98,6 +98,20 @@ function RankedQueue({ user, onNavigate }) {
   }
 
   const findMatch = async () => {
+    // Set up subscription to listen for room creation
+    const roomSubscription = supabase
+      .channel('room-created')
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'room_players', filter: `user_id=eq.${user.id}` },
+        async (payload) => {
+          // User was added to a room by another player
+          clearInterval(matchInterval)
+          setIsQueuing(false)
+          onNavigate('online-game', { roomId: payload.new.room_id })
+        }
+      )
+      .subscribe()
+
     const matchInterval = setInterval(async () => {
       try {
         // Look for another player in queue with same rounds
@@ -143,6 +157,7 @@ function RankedQueue({ user, onNavigate }) {
             .in('user_id', [user.id, opponent.user_id])
 
           clearInterval(matchInterval)
+          roomSubscription.unsubscribe()
           setIsQueuing(false)
           
           // Navigate to game
@@ -151,6 +166,7 @@ function RankedQueue({ user, onNavigate }) {
       } catch (error) {
         console.error('Match finding error:', error)
         clearInterval(matchInterval)
+        roomSubscription.unsubscribe()
         setIsQueuing(false)
         setError('Matchmaking failed: ' + error.message)
       }
@@ -159,6 +175,7 @@ function RankedQueue({ user, onNavigate }) {
     // Timeout after 2 minutes
     setTimeout(() => {
       clearInterval(matchInterval)
+      roomSubscription.unsubscribe()
       if (isQueuing) {
         leaveQueue()
         setError('No opponents found. Try again later.')
