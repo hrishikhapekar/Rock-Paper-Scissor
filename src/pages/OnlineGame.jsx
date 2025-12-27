@@ -390,21 +390,8 @@ function OnlineGame({ user, gameData, onNavigate }) {
     )
   }
 
-  const myScore = players.reduce((score, p) => {
-    if (p.user_id === user.id) {
-      // Count wins from game history - placeholder for now
-      return 0
-    }
-    return score
-  }, 0)
-  
-  const oppScore = players.reduce((score, p) => {
-    if (p.user_id !== user.id) {
-      // Count wins from game history - placeholder for now  
-      return 0
-    }
-    return score
-  }, 0)
+  const myScore = 0 // Will be calculated from actual game rounds
+  const oppScore = 0 // Will be calculated from actual game rounds
 
   return (
     <div className="card">
