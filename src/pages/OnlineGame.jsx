@@ -156,6 +156,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
         .update({ move: null })
         .eq('room_id', gameData.roomId)
 
+      // Reset all game state
       setGameState('playing')
       setTimeLeft(15)
       setIsTimerActive(true)
@@ -163,6 +164,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
       setOpponentMove(null)
       setRoundResult(null)
       setShowResult(false)
+      setBufferTime(0)
     } catch (error) {
       setError('Failed to start round: ' + error.message)
     }
@@ -449,7 +451,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
         />
       )}
       
-      {gameState === 'buffer' && (
+      {gameState === 'buffer' && bufferTime > 0 && (
         <div style={{ textAlign: 'center', margin: '20px 0' }}>
           <div style={{ fontSize: '18px', marginBottom: '10px' }}>
             Move submitted! Waiting for confirmation...
@@ -507,7 +509,7 @@ function OnlineGame({ user, gameData, onNavigate }) {
       <GameBoard 
         moves={shuffledMoves}
         onMoveSelect={handlePlayerMove}
-        disabled={myMove || gameState !== 'playing'}
+        disabled={!!myMove || showResult || gameState === 'buffer'}
         selectedMove={myMove}
       />
       
