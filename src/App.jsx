@@ -32,7 +32,8 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
-        await createProfileIfNeeded(session.user)
+        // Don't await - let it run in background
+        createProfileIfNeeded(session.user)
       }
       if (!session?.user) {
         setCurrentPage('menu')
@@ -43,38 +44,26 @@ function App() {
   }, [])
 
   const createProfileIfNeeded = async (user) => {
+    // Don't block the UI - just log and continue
     try {
-      console.log('Creating profile for user:', user.id)
-      
-      // Check if profile exists first
       const { data: existing } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', user.id)
         .single()
       
-      if (existing) {
-        console.log('Profile already exists')
-        return
-      }
-      
-      // Create new profile
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          id: user.id,
-          username: `Player#${Math.floor(Math.random() * 9999)}`,
-          rating: 1200
-        })
-        .select()
-      
-      if (error) {
-        console.error('Profile creation failed:', error)
-      } else {
-        console.log('Profile created successfully:', data)
+      if (!existing) {
+        await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            username: `Player#${Math.floor(Math.random() * 9999)}`,
+            rating: 1200
+          })
       }
     } catch (error) {
-      console.error('Profile creation error:', error)
+      // Silently fail - don't block the UI
+      console.log('Profile creation skipped:', error.message)
     }
   }
 
