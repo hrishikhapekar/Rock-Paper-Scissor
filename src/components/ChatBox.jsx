@@ -49,6 +49,7 @@ function ChatBox({ roomId, user, disabled }) {
       .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${roomId}` },
         async (payload) => {
+          console.log('New chat message:', payload)
           // Get username for new message
           const { data: profile } = await supabase
             .from('profiles')
@@ -61,7 +62,13 @@ function ChatBox({ roomId, user, disabled }) {
             profiles: profile
           }
 
-          setMessages(prev => [...prev, messageWithProfile])
+          setMessages(prev => {
+            // Prevent duplicates
+            if (prev.find(m => m.id === messageWithProfile.id)) {
+              return prev
+            }
+            return [...prev, messageWithProfile]
+          })
         }
       )
       .subscribe()

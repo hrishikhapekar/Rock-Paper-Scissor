@@ -204,6 +204,20 @@ function OnlineGame({ user, gameData, onNavigate }) {
       setTimeout(() => {
         clearInterval(bufferInterval)
         setBufferTime(0)
+        // Force check resolution after buffer ends
+        setTimeout(() => {
+          const { data: updatedPlayers } = await supabase
+            .from('room_players')
+            .select(`
+              *,
+              profiles:user_id (username, rating)
+            `)
+            .eq('room_id', gameData.roomId)
+          
+          if (updatedPlayers) {
+            checkRoundResolution(updatedPlayers)
+          }
+        }, 500)
       }, 3000)
     } catch (error) {
       setError('Failed to submit move: ' + error.message)
@@ -224,7 +238,10 @@ function OnlineGame({ user, gameData, onNavigate }) {
     const me = playersData.find(p => p.user_id === user.id)
     const opp = playersData.find(p => p.user_id !== user.id)
 
-    if (me?.move && opp?.move && bufferTime === 0) {
+    console.log('Checking resolution:', { me: me?.move, opp: opp?.move, bufferTime })
+
+    if (me?.move && opp?.move && bufferTime === 0 && gameState !== 'showing-result') {
+      console.log('Resolving round with moves:', me.move, opp.move)
       resolveRound(me.move, opp.move)
     }
   }
