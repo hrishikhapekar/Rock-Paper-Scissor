@@ -208,17 +208,19 @@ function RankedQueue({ user, onNavigate }) {
       setError('Failed to update username: ' + error.message)
     }
   }
+
+  const leaveQueue = async () => {
     try {
       await supabase
         .from('matchmaking_queue')
         .delete()
         .eq('user_id', user.id)
-      
+
       // Clean up subscription
       if (window.matchmakingSubscription) {
         window.matchmakingSubscription.unsubscribe()
       }
-      
+
       setIsQueuing(false)
       setQueueTime(0)
     } catch (error) {
